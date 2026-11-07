@@ -23,7 +23,6 @@ services:
   - type: web
     name: waterguard-web-prahalya87-ux
     runtime: static
-    plan: free
     rootDir: frontend
     buildCommand: npm ci && npm run build
     staticPublishPath: dist
