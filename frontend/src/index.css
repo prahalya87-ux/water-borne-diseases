@@ -2,5 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-body { @apply bg-slate-100 text-slate-800 antialiased; font-family: Inter, system-ui, "Segoe UI", sans-serif; }
+body { @apply bg-slate-100 text-slate-800 antialiased; min-width: 320px; font-family: Inter, system-ui, "Segoe UI", sans-serif; }
 html { scroll-behavior: smooth; }
+#root { min-height: 100vh; }
