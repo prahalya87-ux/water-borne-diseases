@@ -1,0 +1,50 @@
+[
+  {
+    "disease": "acute_diarrhoeal_disease",
+    "locality": "Bhagirathpura, Indore",
+    "district": "Indore",
+    "latitude": 22.7196,
+    "longitude": 75.8577,
+    "reported_on": "2025-12-29",
+    "cases": 436,
+    "source": "ETV Bharat / PTI, 14 Jan 2026",
+    "source_url": "https://www.etvbharat.com/amp/en/bharat/indore-water-contamination-death-audit-suggests-15-died-due-to-diarrhoea-outbreak-enn26011401203",
+    "notes": "Vomiting and diarrhoea outbreak linked by officials to contaminated drinking water; residents and media point to leakage/sewage contamination of the supply. 'cases' = 436 patients admitted to hospitals since 29 Dec 2025 (as reported 14 Jan 2026), not lab-confirmed cases. Death figures differ by source: administration confirmed 6, an audit report suggested 15 of 21 deaths may be linked, residents claimed 23. Map position is city-level (approximate)."
+  },
+  {
+    "disease": "acute_diarrhoeal_disease",
+    "locality": "KSFC Layout, Lingarajapuram, Bengaluru",
+    "district": "Bengaluru Urban",
+    "latitude": 12.9716,
+    "longitude": 77.5946,
+    "reported_on": "2026-01-04",
+    "cases": null,
+    "source": "Down To Earth, Kiran Pandey",
+    "source_url": "https://www.downtoearth.org.in/amp/story/water/unsafe-water-year-round-over-5500-fell-sick-34-died-due-to-contaminated-tap-water-across-india-in-last-12-months",
+    "notes": "At least 30 households reported diarrhoea and stomach infections on 4 Jan 2026. Individual case count not given. Map position is city-level (approximate)."
+  },
+  {
+    "disease": "cholera",
+    "locality": "Gandhinagar district (approximate)",
+    "district": "Gandhinagar",
+    "latitude": 23.2156,
+    "longitude": 72.6369,
+    "reported_on": "2024-06-02",
+    "cases": 4,
+    "source": "The Indian Express, 2 Jun 2024",
+    "source_url": "https://indianexpress.com/article/cities/ahmedabad/with-4-confirmed-cases-gandhinagar-sees-cholera-outbreak-9366543/",
+    "notes": "The report described four confirmed and six suspected cases across three areas. It mentioned suspected contaminated drinking water in one area and suspected contaminated food in another; it did not establish a single confirmed water source. Coordinates are an approximate district-level map position. Media-reported, not independently verified."
+  },
+  {
+    "disease": "cholera",
+    "locality": "Neyyattinkara (approximate)",
+    "district": "Thiruvananthapuram",
+    "latitude": 8.399,
+    "longitude": 77.085,
+    "reported_on": "2024-07-09",
+    "cases": null,
+    "source": "The Hindu, 9 Jul 2024",
+    "source_url": "https://www.thehindu.com/news/national/kerala/cholera-outbreak-hits-private-care-home-in-kerala-health-dept-steps-up-preventive-measures/article68384615.ece",
+    "notes": "The report described a cholera outbreak at a private care home in Neyyattinkara. The article did not give a case count and said water samples were being tested to identify the source; it did not confirm contaminated water as the cause. Coordinates are an approximate town-level map position. Media-reported, not independently verified."
+  }
+]
