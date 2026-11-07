@@ -25,18 +25,28 @@ export default function Alerts() {
   const [sev, setSev] = useState("all");
   const [newSub, setNewSub] = useState("");
   const [msg, setMsg] = useState("");
-  const [offline, setOffline] = useState(false);
+  const [loadError, setLoadError] = useState("");
 
   const load = useCallback(async () => {
     try {
       const q = locality.trim() ? `?locality=${encodeURIComponent(locality.trim())}` : "";
       const a = await apiFetch(`/api/alerts${q}`, null);
-      if (a.ok) { setAlerts((await a.json()).filter((alert: Alert) => !alert.is_demo)); setOffline(false); }
+      if (!a.ok) throw new Error(`Alerts request failed (${a.status}). Check the API service and its logs.`);
+      setAlerts((await a.json()).filter((alert: Alert) => !alert.is_demo));
       if (token) {
-        const n = await apiFetch("/api/notifications", token); if (n.ok) setNotes((await n.json()).filter((note: Note) => !note.title.startsWith("[DEMO EXAMPLE] ")));
-        const s = await apiFetch("/api/subscriptions", token); if (s.ok) setSubs(await s.json());
+        const n = await apiFetch("/api/notifications", token);
+        if (!n.ok) throw new Error(`Notifications request failed (${n.status}). Sign in again if your session has expired.`);
+        setNotes((await n.json()).filter((note: Note) => !note.title.startsWith("[DEMO EXAMPLE] ")));
+        const s = await apiFetch("/api/subscriptions", token);
+        if (!s.ok) throw new Error(`Subscriptions request failed (${s.status}). Sign in again if your session has expired.`);
+        setSubs(await s.json());
       }
-    } catch { setOffline(true); }
+      setLoadError("");
+    } catch (error) {
+      setLoadError(error instanceof TypeError
+        ? "Unable to connect to the WaterGuard API. For local development, open the Vite site with the backend running; for deployment, check VITE_API_URL."
+        : error instanceof Error ? error.message : "The alerts request failed for an unknown reason.");
+    }
   }, [locality, token]);
 
   useEffect(() => { load(); }, [load]);
@@ -57,7 +67,7 @@ export default function Alerts() {
 
   return (
     <AppShell title="Alerts & Notifications">
-      {offline && <p role="alert" className="mb-4 rounded bg-red-50 p-3 text-sm text-red-700">Could not reach the backend. Start it with: uvicorn app.main:app --reload</p>}
+      {loadError && <p role="alert" className="mb-4 rounded bg-red-50 p-3 text-sm text-red-700">{loadError}</p>}
       <div className="grid gap-6 xl:grid-cols-3">
         <section className="space-y-3 xl:col-span-2">
           <div className="flex flex-wrap gap-3 rounded-xl bg-white p-3 shadow">
@@ -66,7 +76,7 @@ export default function Alerts() {
               <option value="all">All severities</option><option value="critical">Critical</option><option value="warning">Warning</option><option value="advisory">Advisory</option><option value="info">Info</option>
             </select>
           </div>
-          {!shown.length && !offline && (
+          {!shown.length && !loadError && (
             <div className="rounded-xl bg-white p-6 text-sm text-slate-600 shadow">
               No published alerts{locality || sev !== "all" ? " match these filters" : " right now"}. Alerts appear here only after an administrator approves them. No alert does not guarantee safe water: check with your local water authority.
             </div>

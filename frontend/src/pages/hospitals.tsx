@@ -5,8 +5,8 @@ import "leaflet/dist/leaflet.css";
 import { AlertTriangle, Crosshair, ExternalLink, Navigation, Search } from "lucide-react";
 import { Link } from "react-router-dom";
 import { AppShell } from "../components/layout";
+import { API } from "../lib/api";
 
-const API: string = (import.meta as any).env?.VITE_API_URL ?? "http://localhost:8000";
 type Position = [number, number];
 type Facility = {
   id: string;
@@ -139,6 +139,8 @@ export default function Hospitals() {
       setFacilities([]);
       setMessage(error instanceof DOMException && error.name === "AbortError"
         ? ""
+        : error instanceof TypeError
+          ? "Could not connect to the hospital service. Start the backend and open the site through Vite (which proxies /api), or configure VITE_API_URL for your deployed API."
         : error instanceof Error ? error.message : "Could not load nearby hospitals. Please try again.");
     } finally {
       if (currentRequest === requestId.current) {

@@ -2,8 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Crosshair } from "lucide-react";
 import { AppShell } from "../components/layout";
-
-const API: string = (import.meta as any).env?.VITE_API_URL ?? "http://localhost:8000";
+import { API } from "../lib/api";
 const categories = [
   ["unusual_color", "Unusual colour"], ["unusual_odor", "Unusual smell"],
   ["visible_contamination", "Visible contamination"], ["suspected_illness_cluster", "Suspected illness cluster (several people sick)"],
@@ -72,7 +71,7 @@ export default function Report() {
       }
       setDone({ code: report_code, photoNote });
     } catch {
-      setError("Could not reach the WaterGuard backend. Start it with: uvicorn app.main:app --reload (inside the backend folder).");
+      setError("Could not connect to WaterGuard. In local development, start the backend and open the site through the Vite frontend server; for deployment, configure VITE_API_URL to the backend URL.");
     } finally { setBusy(false); }
   }
 

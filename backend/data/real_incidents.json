@@ -46,5 +46,89 @@
     "source": "The Hindu, 9 Jul 2024",
     "source_url": "https://www.thehindu.com/news/national/kerala/cholera-outbreak-hits-private-care-home-in-kerala-health-dept-steps-up-preventive-measures/article68384615.ece",
     "notes": "The report described a cholera outbreak at a private care home in Neyyattinkara. The article did not give a case count and said water samples were being tested to identify the source; it did not confirm contaminated water as the cause. Coordinates are an approximate town-level map position. Media-reported, not independently verified."
+  },
+  {
+    "disease": "cholera",
+    "locality": "Delhi (multiple wards)",
+    "district": "Delhi",
+    "latitude": 28.6139,
+    "longitude": 77.209,
+    "reported_on": "2025-10-06",
+    "cases": 240,
+    "source": "India Today, 6 Oct 2025",
+    "source_url": "https://www.indiatoday.in/health/story/delhi-reports-a-sharp-spike-in-cholera-cases-linked-to-contaminated-water-2798281-2025-10-06",
+    "notes": "India Today reported over 240 detected cholera cases across 104 Delhi wards during 2025 and quoted health officials citing contaminated water and poor hygiene. The article also said no large-scale outbreak had been declared. Source-reported cumulative figure, not independently verified by WaterGuard; map position is city-level."
+  },
+  {
+    "disease": "cholera",
+    "locality": "Shri Yugpurush Dham, Indore",
+    "district": "Indore",
+    "latitude": 22.7196,
+    "longitude": 75.8577,
+    "reported_on": "2024-07-04",
+    "cases": null,
+    "source": "The Times of India, 4 Jul 2024",
+    "source_url": "https://timesofindia.indiatimes.com/city/indore/water-and-food-inspection-initiated-in-indore-after-cholera-outbreak/articleshow/111499987.cms",
+    "notes": "The report said a cholera outbreak was confirmed at Shri Yugpurush Dham Boudhik Vikas Kendra, with six deaths and 60 people in hospital. Those are reported deaths and hospitalisations, not a total case count. Authorities ordered water and food sampling; the source was not established in the article. Media-reported, not independently verified by WaterGuard."
+  },
+  {
+    "disease": "acute_gastrointestinal_illness",
+    "locality": "Kachna Housing Board area, Raipur",
+    "district": "Raipur",
+    "latitude": 21.2514,
+    "longitude": 81.6296,
+    "reported_on": "2026-01-08",
+    "cases": null,
+    "source": "Down To Earth, 8 Jan 2026",
+    "source_url": "https://www.downtoearth.org.in/water/unsafe-water-year-round-over-5500-fell-sick-34-died-due-to-contaminated-tap-water-across-india-in-last-12-months",
+    "notes": "Down To Earth reported foul-smelling and visibly polluted tap water in the Kachna Housing Board area for more than a month and around 100 people reporting illness. The article did not specify a clinical diagnosis or give a verified case count. Report date is the review publication date; map position is city-level."
+  },
+  {
+    "disease": "acute_gastrointestinal_illness",
+    "locality": "Sector 70A, Gurugram",
+    "district": "Gurugram",
+    "latitude": 28.4089,
+    "longitude": 77.0507,
+    "reported_on": "2026-01-08",
+    "cases": null,
+    "source": "Down To Earth, 8 Jan 2026",
+    "source_url": "https://www.downtoearth.org.in/water/unsafe-water-year-round-over-5500-fell-sick-34-died-due-to-contaminated-tap-water-across-india-in-last-12-months",
+    "notes": "Down To Earth reported that residents of Sector 70A had diarrhoea and gastrointestinal illness after drinking tap water in early December 2025; around 60 to 70 people were reportedly affected and at least 10 hospitalised. These are source-reported estimates, not a verified case count. Report date is the review publication date; map position is approximate."
+  },
+  {
+    "disease": "typhoid",
+    "locality": "Gandhinagar district (early 2026 report)",
+    "district": "Gandhinagar",
+    "latitude": 23.2156,
+    "longitude": 72.6369,
+    "reported_on": "2026-01-08",
+    "cases": null,
+    "source": "Down To Earth, 8 Jan 2026",
+    "source_url": "https://www.downtoearth.org.in/water/unsafe-water-year-round-over-5500-fell-sick-34-died-due-to-contaminated-tap-water-across-india-in-last-12-months",
+    "notes": "Down To Earth reported that more than 150 children were admitted to hospital with typhoid in early January after consuming contaminated water. Admissions are not a confirmed total case count. This is distinct from the 2024 Gandhinagar cholera report. Report date is the review publication date; map position is approximate."
+  },
+  {
+    "disease": "acute_diarrhoeal_disease",
+    "locality": "Village in Tripura (name not stated)",
+    "district": null,
+    "latitude": 23.8315,
+    "longitude": 91.2868,
+    "reported_on": "2022-12-31",
+    "cases": null,
+    "source": "Down To Earth, 7 Jan 2026 (citing a 2024 Heliyon study)",
+    "source_url": "https://www.downtoearth.org.in/water/indores-clean-image-masks-a-liquid-waste-crisis",
+    "notes": "The article described acute diarrhoeal illness among village residents from 31 Dec 2022 to 3 Jan 2023 and reported that users of public drinking-water sources were affected. It did not name the village or state a case count. Approximate Tripura state-level map position; historical research/media summary, not a current alert."
+  },
+  {
+    "disease": "cholera",
+    "locality": "Bengaluru (citywide, locality unspecified)",
+    "district": "Bengaluru Urban",
+    "latitude": 12.9716,
+    "longitude": 77.5946,
+    "reported_on": "2020-03-01",
+    "cases": 20,
+    "source": "Business Standard, 3 Apr 2024",
+    "source_url": "https://www.business-standard.com/india-news/cholera-outbreak-comes-knocking-to-bengaluru-amidst-acute-water-shortage-124040301132_1.html",
+    "notes": "The article referenced a March 2020 Bengaluru cholera outbreak with nearly 20 confirmed cases. The date is month-level and normalised to the first of the month; the exact locality is not given. Historical source-reported count, not a current alert or independently verified by WaterGuard."
   }
 ]

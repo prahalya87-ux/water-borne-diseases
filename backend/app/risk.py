@@ -4,7 +4,7 @@ import json
 from collections import defaultdict
 from datetime import date, datetime, timedelta, timezone
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from .models import ContaminationReport, DiseaseReport, ReportStatus, RiskAssessment, WaterQualityTest
@@ -13,19 +13,20 @@ from .water_standards import classify_test
 METHOD = {
     "name": "rule_based_v1", "validated": False,
     "description": ("Adds points for each risk signal found for a locality. Windows: citizen reports 14 days, water tests 30 days, "
-                    "disease records 28 days (compared with the 28 days before). Score is a ranking aid, not a probability."),
+                    "disease records 28 days (compared with the 28 days before), including source-reported records when recent. Synthetic/demo records are excluded. Score is a ranking aid, not a probability."),
     "rules": [
         {"factor": "Citizen reports (unverified unless reviewed)", "points": "1 per report, max 4"},
         {"factor": "Reviewer-verified reports", "points": "2 each, max 4"},
         {"factor": "Escalation rule triggered", "points": "2"},
         {"factor": "E. coli detected in a water test", "points": "4"},
         {"factor": "Other water-test values outside guidelines", "points": "1"},
-        {"factor": "Disease records: 1-9 / 10-49 / 50+ cases", "points": "1 / 2 / 3"},
+        {"factor": "Disease cases: 1-9 / 10-49 / 50+", "points": "1 / 2 / 3"},
+        {"factor": "Disease reports with unspecified case counts", "points": "1 per report, max 2"},
         {"factor": "Disease cases rising 50%+ vs previous 28 days (at least 5 cases)", "points": "1"},
     ],
     "categories": "8+ high, 4-7 moderate, 1-3 low, otherwise insufficient data (fewer than 3 data points and no strong signal)",
 }
-LIMITATIONS = ("Rule-based screening, not validated against real outbreak outcomes. Citizen reports are unverified. Rainfall, flooding and "
+LIMITATIONS = ("Rule-based screening, not validated against real outbreak outcomes. Citizen reports and media-reported disease records may be unverified. Rainfall, flooding and "
                "population data are not used. Disease data may be delayed or incomplete. This is not a diagnosis and does not confirm an outbreak.")
 RECOMMEND = {
     "high": "Prioritise field inspection and laboratory water testing; review reports; consider a public advisory only after verification.",
@@ -36,19 +37,24 @@ RECOMMEND = {
 
 
 def _cases(d: DiseaseReport) -> int:
-    return d.cases if d.cases is not None else 1
+    return d.cases or 0
 
 
 def run_assessments(db: Session) -> list[RiskAssessment]:
     now, today = datetime.now(timezone.utc), date.today()
     groups = defaultdict(lambda: {"name": None, "reports": [], "tests": [], "cur": [], "prev": []})
-    rq = select(ContaminationReport).where(ContaminationReport.status != ReportStatus.rejected,
+    rq = select(ContaminationReport).where(ContaminationReport.is_demo.is_(False),
+                                           ContaminationReport.status != ReportStatus.rejected,
                                            ContaminationReport.observed_at >= now - timedelta(days=14))
     for r in db.scalars(rq):
         g = groups[r.locality.strip().lower()]; g["name"] = g["name"] or r.locality; g["reports"].append(r)
-    for t in db.scalars(select(WaterQualityTest).where(WaterQualityTest.tested_at >= now - timedelta(days=30))):
+    for t in db.scalars(select(WaterQualityTest).where(
+        WaterQualityTest.is_demo.is_(False), WaterQualityTest.tested_at >= now - timedelta(days=30)
+    )):
         g = groups[t.locality.strip().lower()]; g["name"] = g["name"] or t.locality; g["tests"].append(t)
-    for d in db.scalars(select(DiseaseReport).where(DiseaseReport.reported_on >= today - timedelta(days=56))):
+    for d in db.scalars(select(DiseaseReport).where(
+        DiseaseReport.is_demo.is_(False), DiseaseReport.reported_on >= today - timedelta(days=56)
+    )):
         g = groups[d.locality.strip().lower()]; g["name"] = g["name"] or d.locality
         g["cur" if d.reported_on >= today - timedelta(days=28) else "prev"].append(d)
 
@@ -77,6 +83,10 @@ def run_assessments(db: Session) -> list[RiskAssessment]:
         cur, prev = sum(_cases(d) for d in g["cur"]), sum(_cases(d) for d in g["prev"])
         if cur:
             add("Disease records (last 28 days)", 3 if cur >= 50 else 2 if cur >= 10 else 1, f"{cur} case(s) recorded (reporting may be delayed)")
+        unspecified = sum(1 for d in g["cur"] if d.cases is None)
+        if unspecified:
+            add("Disease reports with unspecified case counts", min(unspecified, 2),
+                f"{unspecified} report(s); case count not stated")
         if cur >= 5 and cur >= 1.5 * prev:
             add("Rising trend vs previous 28 days", 1, f"{cur} vs {prev}")
 
@@ -89,12 +99,11 @@ def run_assessments(db: Session) -> list[RiskAssessment]:
         if not tests: missing.append("No water tests in the last 30 days")
         if not g["cur"] and not g["prev"]: missing.append("No disease records in the last 8 weeks")
         if not reports: missing.append("No citizen reports in the last 14 days")
-        rows = reports + tests + g["cur"] + g["prev"]
         a = RiskAssessment(
             locality=g["name"], category=category, score=None if category == "insufficient_data" else float(score),
             factors_json=json.dumps({"factors": factors, "missing_data": missing, "recommendation": RECOMMEND[category]}),
             period_start=today - timedelta(days=28), period_end=today, confidence=confidence, limitations=LIMITATIONS,
-            method=METHOD["name"], is_demo=any(getattr(x, "is_demo", False) for x in rows))
+            method=METHOD["name"], is_demo=False)
         db.add(a); out.append(a)
     db.flush()
     return out
@@ -110,8 +119,48 @@ def to_dict(a: RiskAssessment) -> dict:
 
 def latest_per_locality(db: Session) -> list[RiskAssessment]:
     seen, out = set(), []
-    for a in db.scalars(select(RiskAssessment).order_by(RiskAssessment.analysed_at.desc())):
+    for a in db.scalars(select(RiskAssessment).where(
+        RiskAssessment.is_demo.is_(False)
+    ).order_by(RiskAssessment.analysed_at.desc())):
         k = a.locality.strip().lower()
         if k not in seen:
             seen.add(k); out.append(a)
     return out
+
+
+def current_input_counts(db: Session) -> dict[str, int]:
+    now, today = datetime.now(timezone.utc), date.today()
+    return {
+        "citizen_reports_14d": db.scalar(
+            select(func.count()).select_from(ContaminationReport).where(
+                ContaminationReport.is_demo.is_(False),
+                ContaminationReport.status != ReportStatus.rejected,
+                ContaminationReport.observed_at >= now - timedelta(days=14),
+            )
+        ) or 0,
+        "water_tests_30d": db.scalar(
+            select(func.count()).select_from(WaterQualityTest).where(
+                WaterQualityTest.is_demo.is_(False),
+                WaterQualityTest.tested_at >= now - timedelta(days=30),
+            )
+        ) or 0,
+        "disease_reports_56d": db.scalar(
+            select(func.count()).select_from(DiseaseReport).where(
+                DiseaseReport.is_demo.is_(False),
+                DiseaseReport.reported_on >= today - timedelta(days=56),
+            )
+        ) or 0,
+    }
+
+
+def historical_context(db: Session) -> dict[str, int]:
+    return {
+        "source_reported_incidents_on_file": db.scalar(
+            select(func.count()).select_from(DiseaseReport).where(
+                DiseaseReport.is_demo.is_(False),
+                DiseaseReport.verification_status == "media_reported",
+                DiseaseReport.source_url.is_not(None),
+            )
+        ) or 0,
+        "disease_record_window_days": 56,
+    }

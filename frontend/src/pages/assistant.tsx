@@ -12,6 +12,11 @@ const suggestions = [
   "How can I report contaminated water?",
   "Where can I find nearby hospitals?",
   "What should I do during a local water-safety advisory?",
+  "What should I do if I have watery diarrhoea and vomiting?",
+  "How do I prepare ORS safely?",
+  "What should I do after flooding?",
+  "How can I prevent typhoid?",
+  "How do I care for dehydration from diarrhoea?",
 ];
 
 export default function Assistant() {

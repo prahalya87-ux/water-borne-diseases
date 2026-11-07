@@ -1,4 +1,4 @@
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 
 import pytest
 from fastapi.testclient import TestClient
@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 from app.database import Base, SessionLocal, engine
 from app.deps import reset_rate_limits
 from app.main import app
-from app.models import DiseaseReport, Role, User, WaterQualityTest
+from app.models import DiseaseReport, RiskAssessment, Role, User, WaterQualityTest
 from app.security import create_access_token
 
 client = TestClient(app)
@@ -70,6 +70,63 @@ def test_strong_signals_give_high_with_explained_factors():
     assert item["recommendation"]
 
 
+def test_demo_records_and_demo_assessments_are_excluded():
+    admin = make_user("demo-filter@example.com", Role.administrator)
+    db = SessionLocal()
+    db.add(WaterQualityTest(sample_id="DEMO-1", locality="Kurla", tested_at=datetime.now(timezone.utc),
+                            organization="Demo", ecoli_result="present", is_demo=True))
+    db.add(DiseaseReport(disease="cholera", cases=50, locality="Kurla", reported_on=date.today(),
+                         source="Demo", is_demo=True))
+    db.add(RiskAssessment(locality="Kurla", category="high", score=12, factors_json="{}",
+                          period_start=date.today(), period_end=date.today(), is_demo=True))
+    db.commit()
+    db.close()
+
+    got = client.get("/api/risk/assessments").json()
+    assert got["items"] == []
+    assert got["current_inputs"] == {
+        "citizen_reports_14d": 0, "water_tests_30d": 0, "disease_reports_56d": 0,
+    }
+
+    result = client.post("/api/admin/risk/run", headers=auth(admin)).json()
+    assert result["items"] == []
+    assert result["current_inputs"] == got["current_inputs"]
+
+
+def test_demo_assessment_does_not_hide_real_assessment_for_locality():
+    db = SessionLocal()
+    db.add(RiskAssessment(locality="Kurla", category="low", score=1, factors_json="{}",
+                          period_start=date.today(), period_end=date.today(), is_demo=False,
+                          analysed_at=datetime.now(timezone.utc) - timedelta(days=1)))
+    db.add(RiskAssessment(locality="Kurla", category="high", score=12, factors_json="{}",
+                          period_start=date.today(), period_end=date.today(), is_demo=True))
+    db.commit()
+    db.close()
+
+    items = client.get("/api/risk/assessments").json()["items"]
+    assert len(items) == 1
+    assert items[0]["category"] == "low"
+    assert items[0]["is_demo"] is False
+
+
+def test_disease_report_without_case_count_is_not_counted_as_one_case():
+    admin = make_user("unknown-cases@example.com", Role.administrator)
+    db = SessionLocal()
+    db.add(DiseaseReport(disease="cholera", cases=None, locality="Kurla", reported_on=date.today(),
+                         source="Media report", verification_status="media_reported"))
+    db.commit()
+    db.close()
+
+    item = client.post("/api/admin/risk/run", headers=auth(admin)).json()["items"][0]
+    assert item["category"] == "insufficient_data"
+    assert item["score"] is None
+    assert item["factors"] == [{
+        "factor": "Disease reports with unspecified case counts",
+        "points": 1,
+        "detail": "1 report(s); case count not stated",
+    }]
+
+
 def test_run_requires_admin_and_get_returns_latest_only():
     citizen = make_user("c@example.com")
     assert client.post("/api/admin/risk/run", headers=auth(citizen)).status_code == 403
@@ -126,6 +183,15 @@ def test_disease_specific_prevention_advice(message, topic):
     r = chat(message)
     assert r["topic"] == topic
     assert "safe" in r["answer"].lower()
+
+
+@pytest.mark.parametrize(("message", "topic"), [
+    ("How do I prepare ORS safely?", "diarrhoea_care"),
+    ("What should I do after flooding?", "flood"),
+    ("How do I care for dehydration from diarrhoea?", "diarrhoea_care"),
+])
+def test_suggested_assistant_questions_have_relevant_guidance(message, topic):
+    assert chat(message)["topic"] == topic
 
 
 def test_emergency_overrides_symptom_pattern():

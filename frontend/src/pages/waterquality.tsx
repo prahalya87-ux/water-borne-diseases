@@ -1,8 +1,7 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Download, FlaskConical } from "lucide-react";
 import { AppShell } from "../components/layout";
-
-const API: string = (import.meta as any).env?.VITE_API_URL ?? "http://localhost:8000";
+import { API } from "../lib/api";
 
 type Param = { parameter: string; label: string; value: number | string | null; unit: string; guideline: string; status: string; severity: "ok" | "caution" | "action_required" | "unknown"; message: string; source: string };
 type Result = { overall: string; parameters: Param[]; lab_test_recommended: boolean; lab_test_reasons: string[]; advice: string[]; disclaimer: string; standard_sources: string[]; report_text: string };
@@ -54,12 +53,27 @@ export default function WaterQuality() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [stored, setStored] = useState<{ items: Stored[]; message: string | null } | null>(null);
+  const [storedError, setStoredError] = useState("");
+  const [loadingStored, setLoadingStored] = useState(false);
 
-  useEffect(() => {
-    fetch(`${API}/api/water-quality`).then((r) => r.json()).then((data) => {
+  const loadStored = useCallback(async () => {
+    setLoadingStored(true);
+    try {
+      const response = await fetch(`${API}/api/water-quality`);
+      if (!response.ok) throw new Error(`Recorded results request failed (${response.status}). Check the API service.`);
+      const data = await response.json();
       setStored({ ...data, items: data.items.filter((item: Stored) => !item.is_demo) });
-    }).catch(() => setStored(null));
+      setStoredError("");
+    } catch (e) {
+      setStoredError(e instanceof TypeError
+        ? "Could not connect to the WaterGuard API. Check that the backend is running at 127.0.0.1:8000 and refresh; if the API is restarting, retry in a few seconds."
+        : e instanceof Error ? e.message : "Recorded results could not be loaded.");
+    } finally {
+      setLoadingStored(false);
+    }
   }, []);
+
+  useEffect(() => { loadStored(); }, [loadStored]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -76,10 +90,12 @@ export default function WaterQuality() {
     try {
       const res = await fetch(`${API}/api/water-quality/check`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       if (res.status === 422) { setError("One of the values is outside the allowed range (for example pH must be 0 to 14)."); return; }
-      if (!res.ok) throw new Error();
+      if (!res.ok) throw new Error(`Water-quality check failed (${res.status}). Check the API service and try again.`);
       setResult(await res.json());
-    } catch {
-      setError("Could not reach the WaterGuard backend. Start it with: uvicorn app.main:app --reload (inside the backend folder).");
+    } catch (e) {
+      setError(e instanceof TypeError
+        ? "Could not connect to the WaterGuard API. Check that the backend is running at 127.0.0.1:8000 and retry; if the API is restarting, wait a few seconds."
+        : e instanceof Error ? e.message : "The water-quality check failed.");
     } finally { setBusy(false); }
   }
 
@@ -146,7 +162,13 @@ export default function WaterQuality() {
 
           <section className="rounded-xl bg-white p-5 shadow">
             <h2 className="font-bold text-navy-800">Recorded laboratory results</h2>
-            {!stored && <p className="mt-2 text-sm text-slate-500">Results could not be loaded. Start the backend to see recorded tests.</p>}
+            {storedError && <div role="alert" className="mt-2 rounded bg-amber-50 p-3 text-sm text-amber-900">
+              <p>{storedError}</p>
+              <button onClick={loadStored} disabled={loadingStored} className="mt-2 rounded border border-amber-700 px-3 py-1 font-semibold disabled:opacity-60">
+                {loadingStored ? "Retrying..." : "Retry loading results"}
+              </button>
+            </div>}
+            {!storedError && loadingStored && <p className="mt-2 text-sm text-slate-500">Loading recorded tests...</p>}
             {stored?.message && <p className="mt-2 rounded bg-slate-50 p-2 text-sm text-slate-600">{stored.message}</p>}
             <ul className="mt-2 space-y-2 text-sm">
               {stored?.items.map((t) => (

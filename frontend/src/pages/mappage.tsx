@@ -6,8 +6,8 @@ import { Crosshair, ExternalLink, Navigation, Search } from "lucide-react";
 import { AppShell } from "../components/layout";
 import { incidents } from "../data/incidents";
 import { coords } from "../data/coords";
+import { API } from "../lib/api";
 
-const API: string = (import.meta as any).env?.VITE_API_URL ?? "http://localhost:8000";
 type Pos = [number, number];
 type Facility = {
   id: string; name: string; facility_type: string; address: string | null; phone: string | null;
@@ -58,7 +58,7 @@ export default function MapPage() {
       setMsg(data.length ? "" : "No hospitals found in this radius in our data. Try a larger radius, or check official health directories.");
     } catch {
       setFacilities([]);
-      setMsg("Could not load hospitals. Start the backend (uvicorn app.main:app --reload) and import real hospitals with: python -m scripts.import_osm_facilities --city \"YourCity\"");
+      setMsg("Could not connect to the hospital service. Start the backend and open the site through Vite (which proxies /api), or configure VITE_API_URL for your deployed API.");
     }
   }
 

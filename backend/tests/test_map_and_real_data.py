@@ -27,12 +27,16 @@ def test_real_incidents_import_is_sourced_unverified_and_idempotent():
     second = import_incidents(db)
     rows = db.query(DiseaseReport).all()
     db.close()
-    assert first == 4 and second == 0
+    assert first == 11 and second == 0
     assert all(r.verification_status == "media_reported" and r.source_url and not r.is_demo for r in rows)
+    assert len({r.source_url + r.locality for r in rows}) == 11
     reports = client.get("/api/disease-reports").json()
     incident = next(row for row in reports if row["verification_status"] == "media_reported")
     assert incident["source_url"].startswith("https://")
     assert incident["notes"]
+    risk = client.get("/api/risk/assessments").json()
+    assert risk["historical_context"]["source_reported_incidents_on_file"] == 11
+    assert risk["historical_context"]["disease_record_window_days"] == 56
 
 
 def test_markers_alert_flags_directions_and_labels():
@@ -61,7 +65,10 @@ def test_markers_alert_flags_directions_and_labels():
 def test_markers_radius_excludes_far_incidents():
     db = SessionLocal(); import_incidents(db); db.close()
     r = client.get("/api/map/markers", params={"lat": 22.7196, "lon": 75.8577, "radius_km": 10}).json()
-    assert [m["locality"] for m in r["markers"]] == ["Bhagirathpura, Indore"]
+    assert {m["locality"] for m in r["markers"]} == {
+        "Bhagirathpura, Indore",
+        "Shri Yugpurush Dham, Indore",
+    }
 
 
 def test_citizen_report_marker_is_rounded_and_hides_contact():

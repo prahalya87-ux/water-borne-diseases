@@ -1,6 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-
-export const API: string = (import.meta as any).env?.VITE_API_URL ?? "http://localhost:8000";
+import { API } from "./api";
 export type Role = "citizen" | "healthcare_worker" | "field_inspector" | "administrator";
 export type User = { id: string; email: string; full_name: string; role: Role };
 
@@ -44,7 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function authCall(path: string, body: object) {
     let res: Response;
     try { res = await apiFetch(path, null, { method: "POST", body: JSON.stringify(body) }); }
-    catch { throw new Error("Could not reach the WaterGuard backend. Start it with: uvicorn app.main:app --reload"); }
+    catch { throw new Error("Could not connect to WaterGuard. In local development, start the backend and open the site through the Vite frontend server; for deployment, configure VITE_API_URL to the backend URL."); }
     if (!res.ok) throw new Error(res.status === 429 ? "Too many attempts. Please wait a minute." : await errorText(res));
     const data = await res.json();
     save(data.access_token, data.user);

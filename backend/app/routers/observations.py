@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..models import ContaminationReport, DiseaseReport, RiskAssessment, WaterQualityTest
-from ..risk import LIMITATIONS, METHOD, latest_per_locality, to_dict
+from ..risk import LIMITATIONS, METHOD, current_input_counts, historical_context, latest_per_locality, to_dict
 
 router = APIRouter(tags=["observations"])
 
@@ -71,6 +71,8 @@ def list_risk_assessments(limit: int = 100, offset: int = 0, db: Session = Depen
         "limitations": LIMITATIONS,
         "disclaimer": "These are screening estimates that help staff decide where to investigate first. They are not diagnoses, probabilities, or confirmed outbreaks, and the method has not been validated against real outbreaks.",
         "last_analysis": last_analysis.isoformat() if hasattr(last_analysis, "isoformat") else last_analysis,
+        "current_inputs": current_input_counts(db),
+        "historical_context": historical_context(db),
     }
 
 

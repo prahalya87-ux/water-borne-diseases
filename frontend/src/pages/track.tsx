@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { AppShell } from "../components/layout";
+import { API } from "../lib/api";
 
-const API: string = (import.meta as any).env?.VITE_API_URL ?? "http://localhost:8000";
 type R = { report_code: string; category: string; water_source: string; locality: string; pin_code: string | null; status: string; rejection_reason: string | null; observed_at: string; created_at: string; is_demo: boolean; verification_label: string };
 
 const steps = [
@@ -28,7 +28,9 @@ export default function Track() {
         if (report.is_demo) throw new Error("This report is not a real submission and cannot be tracked.");
         setR(report);
       })
-      .catch((e) => setError(e instanceof TypeError ? "Could not reach the WaterGuard backend. Start it with: uvicorn app.main:app --reload" : e.message));
+      .catch((e) => setError(e instanceof TypeError
+        ? "Could not connect to WaterGuard. In local development, start the backend and open the site through the Vite frontend server; for deployment, configure VITE_API_URL to the backend URL."
+        : e.message));
   }, [code]);
 
   const idx = r ? steps.findIndex(([s]) => s === r.status) : -1;

@@ -9,7 +9,8 @@ from ..database import get_db
 from ..deps import require_admin
 from ..models import (AuditLog, ContaminationReport, DiseaseReport, OfficialAlert, ReportStatus, User,
                       WaterQualityTest)
-from ..risk import LIMITATIONS, METHOD, latest_per_locality, run_assessments, to_dict
+from ..risk import (LIMITATIONS, METHOD, current_input_counts, historical_context, latest_per_locality,
+                    run_assessments, to_dict)
 from ..water_standards import classify_test
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
@@ -57,13 +58,19 @@ def _risk_response(rows):
 def run_risk_analysis(_: User = Depends(require_admin), db: Session = Depends(get_db)):
     rows = run_assessments(db)
     db.commit()
-    return _risk_response([to_dict(r) for r in rows])
+    response = _risk_response([to_dict(r) for r in rows])
+    response["current_inputs"] = current_input_counts(db)
+    response["historical_context"] = historical_context(db)
+    return response
 
 
 @router.get("/risk/run")
 def get_risk_analysis(db: Session = Depends(get_db)):
     rows = latest_per_locality(db)
-    return _risk_response([to_dict(r) for r in rows])
+    response = _risk_response([to_dict(r) for r in rows])
+    response["current_inputs"] = current_input_counts(db)
+    response["historical_context"] = historical_context(db)
+    return response
 
 
 @router.get("/dashboard")
